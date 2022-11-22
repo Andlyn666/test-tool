@@ -3,6 +3,7 @@ import os
 import subprocess
 import time
 import json
+import re
 
 ARPA_HOLDER_ADDRESS = "0xf977814e90da44bfa03b6295a0616a897441acec"
 ARPA_ADDRESS = "0xBA50933C268F567BDC86E1aC131BE072C6B0b71a"
@@ -55,7 +56,12 @@ def transferArpa(addressTo, addressFrom, value):
 
 def getArpaBalance(address):
     cmd = ['cast', 'call', ARPA_ADDRESS, 'balanceOf(address)', str(address)]
-    execCmd(cmd)
+    outPut = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr = subprocess.PIPE)
+    stdout, stderr = outPut.communicate()
+    balance = re.findall(r'0x[0-9A-F]+', stdout.decode(), re.I)
+    if len(balance) > 0:
+        return balance[0]
+    return -1
 
 def loadAccounts(accountPath):
     accounFile = open(accountPath)
@@ -63,7 +69,6 @@ def loadAccounts(accountPath):
     impersonateAccount(ARPA_HOLDER_ADDRESS)
     for account in accountSet:
         transferArpa(account["account"], ARPA_HOLDER_ADDRESS, account["balance"])
-        getArpaBalance(account["account"])
     stopImpersonateAccount(ARPA_HOLDER_ADDRESS)
 
 def getAccountSet():
@@ -73,7 +78,6 @@ def main():
     startChain(ACCOUNT_NUMBER, 1000)
     loadAccounts(ACCOUNT_PATH)
     mineBlock(3)
-    
 
 if __name__== "__main__" :
     main()
